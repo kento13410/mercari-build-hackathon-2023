@@ -291,6 +291,9 @@ func (h *Handler) Sell(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -448,6 +451,9 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
+	if req.Balance < 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "balance must be a positive integer")
+	}
 
 	userID, err := getUserID(c)
 	if err != nil {
@@ -458,6 +464,9 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -480,6 +489,9 @@ func (h *Handler) GetBalance(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -535,6 +547,9 @@ func (h *Handler) Purchase(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
