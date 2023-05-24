@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/go-playground/validator"
 	"github.com/kento13410/mecari-build-hackathon-2023/backend/db"
 	"github.com/kento13410/mecari-build-hackathon-2023/backend/domain"
 	"github.com/pkg/errors"
@@ -111,6 +112,18 @@ type Handler struct {
 	ItemRepo db.ItemRepository
 }
 
+type CustomValidator struct {
+    validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+	  	// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
+
 func GetSecret() string {
 	if secret := os.Getenv("SECRET"); secret != "" {
 		return secret
@@ -143,6 +156,9 @@ func (h *Handler) Register(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -163,6 +179,9 @@ func (h *Handler) Login(c echo.Context) error {
 	// http.StatusBadRequest(400)
 	req := new(loginRequest)
 	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
@@ -207,6 +226,9 @@ func (h *Handler) AddItem(c echo.Context) error {
 
 	req := new(addItemRequest)
 	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
@@ -290,6 +312,9 @@ func (h *Handler) GetOnSaleItems(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -321,6 +346,9 @@ func (h *Handler) GetItem(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -352,6 +380,9 @@ func (h *Handler) GetUserItems(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -378,6 +409,9 @@ func (h *Handler) GetCategories(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 

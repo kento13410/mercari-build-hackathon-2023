@@ -9,13 +9,18 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/kento13410/mecari-build-hackathon-2023/backend/db"
+	"github.com/kento13410/mecari-build-hackathon-2023/backend/handler"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/kento13410/mecari-build-hackathon-2023/backend/db"
-	"github.com/kento13410/mecari-build-hackathon-2023/backend/handler"
 )
+
+type CustomValidator struct {
+    validator *validator.Validate
+}
 
 const (
 	exitOK = iota
@@ -26,9 +31,17 @@ func main() {
 	os.Exit(run(context.Background()))
 }
 
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+	  	// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
+
 func run(ctx context.Context) int {
 	e := echo.New()
-
+	e.Validator = &CustomValidator{validator: validator.New()}
 	// Middleware
 	e.Use(middleware.Recover())
 
