@@ -151,7 +151,7 @@ func (h *Handler) AccessLog(c echo.Context) error {
 }
 
 func (h *Handler) Register(c echo.Context) error {
-	// TODO: validation
+	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	req := new(registerRequest)
 	if err := c.Bind(req); err != nil {
@@ -176,7 +176,7 @@ func (h *Handler) Register(c echo.Context) error {
 
 func (h *Handler) Login(c echo.Context) error {
 	ctx := c.Request().Context()
-	// TODO: validation
+	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	req := new(loginRequest)
 	if err := c.Bind(req); err != nil {
@@ -221,7 +221,7 @@ func (h *Handler) Login(c echo.Context) error {
 }
 
 func (h *Handler) AddItem(c echo.Context) error {
-	// TODO: validation
+	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	ctx := c.Request().Context()
 
@@ -289,7 +289,7 @@ func (h *Handler) Sell(c echo.Context) error {
 	}
 
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -298,13 +298,14 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// TODO: check req.UserID and item.UserID
+	// TODO: check req.UserID and item.UserID→済
 	// http.StatusPreconditionFailed(412)
-	// TODO: only update when status is initial
+	// TODO: only update when status is initial→済
 	// http.StatusPreconditionFailed(412)
 	if item.UserID != int64(req.UserID) {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
 	}
+
 	if item.Status == domain.ItemStatusInitial {
 		if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -318,7 +319,7 @@ func (h *Handler) GetOnSaleItems(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	items, err := h.ItemRepo.GetOnSaleItems(ctx)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -352,7 +353,7 @@ func (h *Handler) GetItem(c echo.Context) error {
 	}
 
 	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -386,7 +387,7 @@ func (h *Handler) GetUserItems(c echo.Context) error {
 	}
 
 	items, err := h.ItemRepo.GetItemsByUserID(ctx, userID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -415,7 +416,7 @@ func (h *Handler) GetCategories(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	cats, err := h.ItemRepo.GetCategories(ctx)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -467,11 +468,11 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	}
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusNotFound, err)
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -492,7 +493,7 @@ func (h *Handler) GetBalance(c echo.Context) error {
 	}
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -526,19 +527,14 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// TODO: update only when item status is on sale
+	// TODO: update only when item status is on sale→済
 	// http.StatusPreconditionFailed(412)
 	if item.Status != domain.ItemStatusOnSale {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "The item is not on sale.")
-	}
-
-	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
-	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	} 
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -547,21 +543,36 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// TODO: if it is fail here, item status is still sold
-	// TODO: balance consistency
-	// TODO: not to buy own items. 自身の商品を買おうとしていたら、http.StatusPreconditionFailed(412)
-	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
+	sellerID := item.UserID
+	if sellerID == userID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "The seller and the buyer are the same")
+	}
+
+	if user.Balance < item.Price {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "Not enough money")
+	}
+
+	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
+	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	sellerID := item.UserID
+	// TODO: if it is fail here, item status is still sold→済
+	// TODO: balance consistency
+	// TODO: not to buy own items. 自身の商品を買おうとしていたら、http.StatusPreconditionFailed(412)→済
+	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
+		if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusOnSale); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
 	seller, err := h.UserRepo.GetUser(ctx, sellerID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusNotFound, err)
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
