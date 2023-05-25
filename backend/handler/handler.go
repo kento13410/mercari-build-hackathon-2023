@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/echo/v4"
 	"github.com/go-playground/validator"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/kento13410/mecari-build-hackathon-2023/backend/db"
 	"github.com/kento13410/mecari-build-hackathon-2023/backend/domain"
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -242,6 +243,12 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	// ファイルサイズが大きすぎる場合のエラーハンドリング
+	maxSize := int64(1024 * 1024) // 1MB
+	if file.Size > maxSize {
+		return echo.NewHTTPError(http.StatusBadRequest, "file size is too large")
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -250,7 +257,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
-	// TODO: pass very big file
+	// TODO: pass very big file→済
 	// http.StatusBadRequest(400)
 	if _, err := io.Copy(blob, src); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -436,10 +443,15 @@ func (h *Handler) GetCategories(c echo.Context) error {
 func (h *Handler) GetImage(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	// TODO: overflow
+	// TODO: overflow→済
 	itemID, err := strconv.Atoi(c.Param("itemID"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "invalid itemID type")
+	}
+
+	// overflow
+	if itemID > math.MaxInt32 {
+		return echo.NewHTTPError(http.StatusInternalServerError, "itemID is too large")
 	}
 
 	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
