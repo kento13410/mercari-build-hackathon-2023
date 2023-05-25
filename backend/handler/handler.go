@@ -73,6 +73,7 @@ type getCategoriesResponse struct {
 }
 
 type sellRequest struct {
+	UserID int32 `json:"user_id"`
 	ItemID int32 `json:"item_id"`
 }
 
@@ -301,8 +302,13 @@ func (h *Handler) Sell(c echo.Context) error {
 	// http.StatusPreconditionFailed(412)
 	// TODO: only update when status is initial
 	// http.StatusPreconditionFailed(412)
-	if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	if item.UserID != int64(req.UserID) {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
+	}
+	if item.Status == domain.ItemStatusInitial {
+		if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 	}
 
 	return c.JSON(http.StatusOK, "successful")
@@ -490,7 +496,7 @@ func (h *Handler) GetBalance(c echo.Context) error {
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusNotFound, err)
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -512,8 +518,19 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	// TODO: update only when item status is on sale
 	// http.StatusPreconditionFailed(412)
+	if item.Status != domain.ItemStatusOnSale {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "The item is not on sale.")
+	}
 
 	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
 	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
@@ -524,13 +541,9 @@ func (h *Handler) Purchase(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
-	// TODO: not found handling
-	// http.StatusPreconditionFailed(412)
-	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
