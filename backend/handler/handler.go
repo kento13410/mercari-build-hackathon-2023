@@ -225,7 +225,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	ctx := c.Request().Context()
-	fmt.Println(c)
 
 	req := new(addItemRequest)
 	if err := c.Bind(req); err != nil {
@@ -241,7 +240,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 	file, err := c.FormFile("image")
 	if err != nil {
-		fmt.Println(c)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
