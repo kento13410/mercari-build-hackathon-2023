@@ -75,14 +75,7 @@ $ curl -i -X POST 'http://127.0.0.1:9000/login' -d '{"user_id": 1, "password": "
 # Add item
 # Please put image.jpg on backend folder to call this endpoint 
 # {"id":21}
-$ curl -X POST \
-  --url 'http://127.0.0.1:9000/items' \
-  -F 'name=item' \
-  -F 'category_id=1' \
-  -F 'price=100' \
-  -F 'description=samplesamplesample' \
-  -F 'image=@image.jpg' \
-  -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58""
+$ curl -X POST --url 'http://127.0.0.1:9000/items' -F 'name=item' -F 'category_id=1' -F 'price=10000' -F 'description=good' -F 'image=@images/NIKI.jpg' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58""
 # Item list
 # [{"id":3,"name":"Cucumber","price":80,"image": ..."}]
 curl -X GET 'http://127.0.0.1:9000/users/1/items' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58""
