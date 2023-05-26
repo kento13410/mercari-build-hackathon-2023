@@ -31,7 +31,7 @@ $ curl -X POST 'http://127.0.0.1:9000/initialize'
 | User listed item                   | `/users/:userID/items`           | Sort by created time                                                                                                    |
 | Item detail                        | `GET /items/:itemID`             |                                                                                                                         |
 | Purchase item                      | `POST /purchase/:itemID`         |                                                                                                                         |
-| Edit item *unimplemented           | `PUT /items `                    | Expect same request body as POST /items                                                                                 |
+| Edit item *unimplemented           | `PUT /items/:itemID `            | Expect same request body as POST /items                                                                                 |
 | Create new item draft              | `POST /items`                    |                                                                                                                         |
 | Start to sell item                 | `POST /sell`                     |                                                                                                                         |
 
@@ -65,11 +65,12 @@ Sample code for calling some endpoints after running server
 サーバを立ち上げた後、curlでテストする場合のサンプル
 
 ```shell
+# tokenはname: momom, id: 1, password: passwordの場合のtokenに変更しています。
 # Registration
 # {"id":1,"name":"momom"}
 $ curl -X POST 'http://127.0.0.1:9000/register' -d '{"name": "momom", "password": "password"}'  -H 'Content-Type: application/json'
 # Login (get login token)
-# {"id":1,"name":"momom","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58"}
+# {"id":11,"name":"momom","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg0NTgxNjU3fQ.7YGvgOsKI1EIr8a9yw0Ny6GRmmUJjrAkjjypdpj74qw"}
 $ curl -i -X POST 'http://127.0.0.1:9000/login' -d '{"user_id": 1, "password": "password"}'  -H 'Content-Type: application/json'
 # Add item
 # Please put image.jpg on backend folder to call this endpoint 
