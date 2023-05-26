@@ -5,15 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/kento13410/mecari-build-hackathon-2023/backend/db"
+	"github.com/kento13410/mecari-build-hackathon-2023/backend/domain"
 	"github.com/labstack/echo/v4"
-	"github.com/mercari-build/mecari-build-hackathon-2023/backend/db"
-	"github.com/mercari-build/mecari-build-hackathon-2023/backend/domain"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -72,6 +74,7 @@ type getCategoriesResponse struct {
 }
 
 type sellRequest struct {
+	UserID int32 `json:"user_id"`
 	ItemID int32 `json:"item_id"`
 }
 
@@ -111,6 +114,18 @@ type Handler struct {
 	ItemRepo db.ItemRepository
 }
 
+type CustomValidator struct {
+    validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+	  	// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
+
 func GetSecret() string {
 	if secret := os.Getenv("SECRET"); secret != "" {
 		return secret
@@ -137,10 +152,13 @@ func (h *Handler) AccessLog(c echo.Context) error {
 }
 
 func (h *Handler) Register(c echo.Context) error {
-	// TODO: validation
+	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	req := new(registerRequest)
 	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
@@ -159,10 +177,13 @@ func (h *Handler) Register(c echo.Context) error {
 
 func (h *Handler) Login(c echo.Context) error {
 	ctx := c.Request().Context()
-	// TODO: validation
+	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	req := new(loginRequest)
 	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
@@ -201,12 +222,15 @@ func (h *Handler) Login(c echo.Context) error {
 }
 
 func (h *Handler) AddItem(c echo.Context) error {
-	// TODO: validation
+	// TODO: validation→済
 	// http.StatusBadRequest(400)
 	ctx := c.Request().Context()
 
 	req := new(addItemRequest)
 	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
@@ -219,6 +243,12 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	// ファイルサイズが大きすぎる場合のエラーハンドリング
+	maxSize := int64(1024 * 1024) // 1MB
+	if file.Size > maxSize {
+		return echo.NewHTTPError(http.StatusBadRequest, "file size is too large")
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -227,7 +257,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
-	// TODO: pass very big file
+	// TODO: pass very big file→済
 	// http.StatusBadRequest(400)
 	if _, err := io.Copy(blob, src); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -266,18 +296,27 @@ func (h *Handler) Sell(c echo.Context) error {
 	}
 
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
-	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// TODO: not found handling→済
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// TODO: check req.UserID and item.UserID
+	// TODO: check req.UserID and item.UserID→済
 	// http.StatusPreconditionFailed(412)
-	// TODO: only update when status is initial
+	// TODO: only update when status is initial→済
 	// http.StatusPreconditionFailed(412)
-	if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	if item.UserID != int64(req.UserID) {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
+	}
+
+	if item.Status == domain.ItemStatusInitial {
+		if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 	}
 
 	return c.JSON(http.StatusOK, "successful")
@@ -287,9 +326,12 @@ func (h *Handler) GetOnSaleItems(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	items, err := h.ItemRepo.GetOnSaleItems(ctx)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -318,9 +360,12 @@ func (h *Handler) GetItem(c echo.Context) error {
 	}
 
 	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -349,9 +394,12 @@ func (h *Handler) GetUserItems(c echo.Context) error {
 	}
 
 	items, err := h.ItemRepo.GetItemsByUserID(ctx, userID)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -375,9 +423,12 @@ func (h *Handler) GetCategories(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	cats, err := h.ItemRepo.GetCategories(ctx)
-	// TODO: not found handling
+	// TODO: not found handling→済
 	// http.StatusNotFound(404)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -392,10 +443,15 @@ func (h *Handler) GetCategories(c echo.Context) error {
 func (h *Handler) GetImage(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	// TODO: overflow
+	// TODO: overflow→済
 	itemID, err := strconv.Atoi(c.Param("itemID"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "invalid itemID type")
+	}
+
+	// overflow
+	if itemID > math.MaxInt32 {
+		return echo.NewHTTPError(http.StatusInternalServerError, "itemID is too large")
 	}
 
 	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
@@ -414,6 +470,9 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
+	if req.Balance < 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "balance must be a positive integer")
+	}
 
 	userID, err := getUserID(c)
 	if err != nil {
@@ -421,9 +480,12 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	}
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
-	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// TODO: not found handling→済
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -443,9 +505,12 @@ func (h *Handler) GetBalance(c echo.Context) error {
 	}
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
-	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// TODO: not found handling→済
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -466,41 +531,61 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// TODO: update only when item status is on sale
+	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// TODO: update only when item status is on sale→済
 	// http.StatusPreconditionFailed(412)
+	if item.Status != domain.ItemStatusOnSale {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "The item is not on sale.")
+	} 
+
+	user, err := h.UserRepo.GetUser(ctx, userID)
+	// TODO: not found handling→済
+	// http.StatusPreconditionFailed(412)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	sellerID := item.UserID
+	if sellerID == userID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "The seller and the buyer are the same")
+	}
+
+	if user.Balance < item.Price {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "Not enough money")
+	}
 
 	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
 	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	user, err := h.UserRepo.GetUser(ctx, userID)
-	// TODO: not found handling
-	// http.StatusNotFound(404)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
-	// TODO: not found handling
-	// http.StatusNotFound(404)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	// TODO: if it is fail here, item status is still sold
+	// TODO: if it is fail here, item status is still sold→済
 	// TODO: balance consistency
-	// TODO: not to buy own items. 自身の商品を買おうとしていたら、http.StatusPreconditionFailed(412)
+	// TODO: not to buy own items. 自身の商品を買おうとしていたら、http.StatusPreconditionFailed(412)→済
 	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
+		if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusOnSale); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-
-	sellerID := item.UserID
 
 	seller, err := h.UserRepo.GetUser(ctx, sellerID)
-	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// TODO: not found handling→済
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
