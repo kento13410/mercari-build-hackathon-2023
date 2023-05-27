@@ -11,7 +11,7 @@ import (
 type UserRepository interface {
 	AddUser(ctx context.Context, user domain.User) (int64, error)
 	GetUser(ctx context.Context, id int64) (domain.User, error)
-	UpdateBalance(ctx context.Context, id int64, balance int64) error
+	UpdateBalance(ctx context.Context, tx *sql.Tx, id int64, balance int64) error
 }
 
 type UserDBRepository struct {
@@ -44,8 +44,15 @@ func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, 
 	return user, row.Scan(&user.ID, &user.Name, &user.Password, &user.Balance)
 }
 
-func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance int64) error {
-	if _, err := r.ExecContext(ctx, "UPDATE users SET balance = ? WHERE id = ?", balance, id); err != nil {
+func (r *UserDBRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id int64, balance int64) error {
+	var err error
+	// トランザクションを使用しない場合
+	if tx == nil {
+		_, err = r.ExecContext(ctx, "UPDATE users SET balance = ? WHERE id = ?", balance, id)
+	} else { // トランザクションを使用する場合
+		_, err = tx.ExecContext(ctx, "UPDATE users SET balance = ? WHERE id = ?", balance, id)
+	}
+	if err != nil {
 		return err
 	}
 	return nil
@@ -60,7 +67,7 @@ type ItemRepository interface {
 	GetItemsByName(ctx context.Context, keyword string) ([]domain.Item, error)
 	GetCategory(ctx context.Context, id int64) (domain.Category, error)
 	GetCategories(ctx context.Context) ([]domain.Category, error)
-	UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error
+	UpdateItemStatus(ctx context.Context, tx *sql.Tx, id int32, status domain.ItemStatus) error
 }
 
 type ItemDBRepository struct {
@@ -151,8 +158,15 @@ func (r *ItemDBRepository) GetItemsByName(ctx context.Context, keyword string) (
 	return GetItemByRows(rows, err)
 }
 
-func (r *ItemDBRepository) UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error {
-	if _, err := r.ExecContext(ctx, "UPDATE items SET status = ? WHERE id = ?", status, id); err != nil {
+func (r *ItemDBRepository) UpdateItemStatus(ctx context.Context, tx *sql.Tx, id int32, status domain.ItemStatus) error {
+	var err error
+	// トランザクションを使用しない場合
+	if tx == nil {
+		_, err = r.ExecContext(ctx, "UPDATE items SET status = ? WHERE id = ?", status, id)
+	} else { // トランザクションを使用する場合
+		_, err = tx.ExecContext(ctx, "UPDATE items SET status = ? WHERE id = ?", status, id)
+	}
+	if err != nil {
 		return err
 	}
 	return nil

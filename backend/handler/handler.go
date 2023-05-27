@@ -317,7 +317,7 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "item status is not initial")
 	}
 
-	if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
+	if err := h.ItemRepo.UpdateItemStatus(ctx, nil, item.ID, domain.ItemStatusOnSale); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -491,7 +491,7 @@ func (h *Handler) AddBalance(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance+req.Balance); err != nil {
+	if err := h.UserRepo.UpdateBalance(ctx, nil, userID, user.Balance+req.Balance); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -566,18 +566,22 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "Not enough money")
 	}
 
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return err
+	}
+
 	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
-	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
+	if err := h.ItemRepo.UpdateItemStatus(ctx, tx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	// TODO: if it is fail here, item status is still sold→済
 	// TODO: balance consistency
 	// TODO: not to buy own items. 自身の商品を買おうとしていたら、http.StatusPreconditionFailed(412)→済
-	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
-		if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusOnSale); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
+	if err := h.UserRepo.UpdateBalance(ctx, tx, userID, user.Balance-item.Price); err != nil {
+		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -591,7 +595,12 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	if err := h.UserRepo.UpdateBalance(ctx, sellerID, seller.Balance+item.Price); err != nil {
+	if err := h.UserRepo.UpdateBalance(ctx, tx, sellerID, seller.Balance+item.Price); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if err := tx.Commit(); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
