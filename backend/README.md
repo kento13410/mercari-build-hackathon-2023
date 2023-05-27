@@ -71,26 +71,26 @@ Sample code for calling some endpoints after running server
 $ curl -X POST 'http://127.0.0.1:9000/register' -d '{"name": "momom", "password": "password"}'  -H 'Content-Type: application/json'
 # Login (get login token)
 # {"id":11,"name":"momom","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg0NTgxNjU3fQ.7YGvgOsKI1EIr8a9yw0Ny6GRmmUJjrAkjjypdpj74qw"}
-$ curl -i -X POST 'http://127.0.0.1:9000/login' -d '{"user_id": 1, "password": "password"}'  -H 'Content-Type: application/json'
+$ curl -i -X POST 'http://127.0.0.1:9000/login' -d '{"user_id": 11, "password": "password"}'  -H 'Content-Type: application/json'
 # Add item
 # Please put image.jpg on backend folder to call this endpoint 
 # {"id":21}
-$ curl -X POST --url 'http://127.0.0.1:9000/items' -F 'name=item' -F 'category_id=1' -F 'price=10000' -F 'description=good' -F 'image=@images/NIKI.jpg' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58""
+$ curl -X POST --url 'http://127.0.0.1:9000/items' -F 'name=item' -F 'category_id=1' -F 'price=10000' -F 'description=good' -F 'image=@images/NIKI.jpg' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
 # Item list
 # [{"id":3,"name":"Cucumber","price":80,"image": ..."}]
-curl -X GET 'http://127.0.0.1:9000/users/1/items' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58""
+curl -X GET 'http://127.0.0.1:9000/users/1/items' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
 # Add a balance 
 # "successful"
-curl -X POST 'http://127.0.0.1:9000/balance' -d '{"balance": 1000}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58"" -H 'Content-Type: application/json'
+curl -X POST 'http://127.0.0.1:9000/balance' -d '{"balance": 100}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
 # See a balance
 # {"balance":1000}
-curl -X GET 'http://127.0.0.1:9000/balance' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58""
+curl -X GET 'http://127.0.0.1:9000/balance' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
 # Sell
 # "successful"
-curl -X POST 'http://127.0.0.1:9000/sell' -d '{"user_id": 1, "item_id": 1}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58"" -H 'Content-Type: application/json'
+curl -X POST 'http://127.0.0.1:9000/sell' -d '{"user_id": 1, "item_id": 1}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
 # Purchase
 # "successful"
-curl -X POST 'http://127.0.0.1:9000/purchase/1' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE2ODUxODQ5MzR9.T6zdUKdnxCgrTfptml6MAtyHL3Bgeu__RzqmusyET58"" -H 'Content-Type: application/json'
+curl -X POST 'http://127.0.0.1:9000/purchase/1' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
 ```
 
 ###  Structure
