@@ -12,6 +12,7 @@ type UserRepository interface {
 	AddUser(ctx context.Context, user domain.User) (int64, error)
 	GetUser(ctx context.Context, id int64) (domain.User, error)
 	UpdateBalance(ctx context.Context, tx *sql.Tx, id int64, balance int64) error
+	PurchaseHistory(ctx context.Context, tx *sql.Tx, user_id int64, item_id int32) error
 }
 
 type UserDBRepository struct {
@@ -53,6 +54,13 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id int
 		_, err = tx.ExecContext(ctx, "UPDATE users SET balance = ? WHERE id = ?", balance, id)
 	}
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserDBRepository) PurchaseHistory(ctx context.Context, tx *sql.Tx, user_id int64, item_id int32) error {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO purchase_history (user_id, item_id) VALUES (?, ?)", user_id, item_id); err != nil {
 		return err
 	}
 	return nil

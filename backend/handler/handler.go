@@ -566,6 +566,7 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "Not enough money")
 	}
 
+	// トランザクション開始
 	tx, err := h.DB.Begin()
 	if err != nil {
 		return err
@@ -596,6 +597,11 @@ func (h *Handler) Purchase(c echo.Context) error {
 	}
 
 	if err := h.UserRepo.UpdateBalance(ctx, tx, sellerID, seller.Balance+item.Price); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if err := h.UserRepo.PurchaseHistory(ctx, tx, userID, item.ID); err != nil {
 		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
