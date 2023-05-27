@@ -299,6 +299,9 @@ func (h *Handler) Sell(c echo.Context) error {
 	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -306,6 +309,13 @@ func (h *Handler) Sell(c echo.Context) error {
 	// http.StatusPreconditionFailed(412)
 	// TODO: only update when status is initial→済
 	// http.StatusPreconditionFailed(412)
+	if item.UserID != int64(req.UserID) {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
+	}
+
+	if item.Status != domain.ItemStatusInitial {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "item status is not initial")
+	}
 
 	if err := h.ItemRepo.UpdateItemStatus(ctx, nil, item.ID, domain.ItemStatusOnSale); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
