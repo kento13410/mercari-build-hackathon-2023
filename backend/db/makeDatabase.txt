@@ -1,0 +1,10 @@
+# 実行したSQL文を記述するファイル
+INSERT INTO category (name) VALUES ('clothes');
+INSERT INTO category (name) VALUES ('food');
+INSERT INTO category (name) VALUES ('others');
+# 挿入されたか確認
+SELECT * FROM category;
+# outputは以下のようになるはず
+1|clothes
+2|food
+3|others
