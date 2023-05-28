@@ -96,17 +96,12 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 }
 
 func (r *ItemDBRepository) PutItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, image = ?, status = ? WHERE ID = ?", item.Name, item.Price, item.Description, item.CategoryID, item.Image, item.Status, item.ID); err != nil {
+	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, image = ? WHERE id = ?", item.Name, item.Price, item.Description, item.CategoryID, item.Image, item.ID); err != nil {
 		return domain.Item{}, err
 	}
-	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE ID = ?", item.ID)
+	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE id = ?", item.ID)
 	var res domain.Item
-	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
-	if err == sql.ErrNoRows {
-		err := fmt.Errorf("registration has been stopped because it was done at the same time")
-		return res, err
-	}
-	return res, nil
+	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
 }
 
 func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, error) {
