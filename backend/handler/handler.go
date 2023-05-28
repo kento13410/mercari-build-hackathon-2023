@@ -108,6 +108,11 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
+type getPuchaseHistoryResponse struct {
+	Name        string `json:"name"`
+	PurchasedAt string `json:"date"`
+}
+
 type Handler struct {
 	DB       *sql.DB
 	UserRepo db.UserRepository
@@ -660,6 +665,31 @@ func (h Handler) SearchItem(c echo.Context) error {
 				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
 			}
 		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h Handler) PurchaseHistory(c echo.Context) error {
+	ctx := c.Request().Context()
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	histories, err := h.ItemRepo.GetPuchaseHistory(ctx, userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	var res []getPuchaseHistoryResponse
+	for _, history := range histories {
+		item_id := history.ItemID
+		item, err := h.ItemRepo.GetItem(ctx, item_id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		res = append(res, getPuchaseHistoryResponse{Name: item.Name, PurchasedAt: history.PurchasedAt})
 	}
 
 	return c.JSON(http.StatusOK, res)
