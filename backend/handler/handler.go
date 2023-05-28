@@ -644,7 +644,7 @@ func getEnv(key string, defaultValue string) string {
 func (h *Handler) SearchItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	keyword := c.QueryParam("keyword")
+	keyword := c.QueryParam("name")
 
 	items, err := h.ItemRepo.GetItemsByName(ctx, keyword)
 	// TODO: not found handling→済
