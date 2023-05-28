@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/kento13410/mecari-build-hackathon-2023/backend/domain"
 )
@@ -27,10 +28,13 @@ func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
-
 	var id int64
-	return id, row.Scan(&id)
+	err := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID() AND name = ? and password = ?", user.Name, user.Password).Scan(&id)
+	if err == sql.ErrNoRows {
+		err := fmt.Errorf("registration has been stopped because it was done at the same time")
+		return 0, err
+	}
+	return id, nil
 }
 
 func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, error) {
@@ -72,10 +76,14 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID()")
-
+	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID() AND seller_id = ?", item.UserID)
 	var res domain.Item
-	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
+	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
+	if err == sql.ErrNoRows {
+		err := fmt.Errorf("registration has been stopped because it was done at the same time")
+		return res, err
+	}
+	return res, nil
 }
 
 func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, error) {

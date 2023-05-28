@@ -313,10 +313,12 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
 	}
 
-	if item.Status == domain.ItemStatusInitial {
-		if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err)
-		}
+	if item.Status != domain.ItemStatusInitial {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "item status is not initial")
+	}
+
+	if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, "successful")
