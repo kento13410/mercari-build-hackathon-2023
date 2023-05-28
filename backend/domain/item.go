@@ -25,3 +25,10 @@ type Category struct {
 	ID   int64
 	Name string
 }
+
+type History struct {
+	ID          int64
+	UserID      int64
+	ItemID      int32
+	PurchasedAt string
+}

@@ -81,7 +81,7 @@ $ curl -X POST --url 'http://127.0.0.1:9000/items' -F 'name=item' -F 'category_i
 curl -X GET 'http://127.0.0.1:9000/users/1/items' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
 # Add a balance 
 # "successful"
-curl -X POST 'http://127.0.0.1:9000/balance' -d '{"balance": 100}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
+curl -X POST 'http://127.0.0.1:9000/balance' -d '{"balance": 1000}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
 # See a balance
 # {"balance":1000}
 curl -X GET 'http://127.0.0.1:9000/balance' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
@@ -90,10 +90,13 @@ curl -X GET 'http://127.0.0.1:9000/balance' -H "Authorization: Bearer "eyJhbGciO
 curl -X POST 'http://127.0.0.1:9000/sell' -d '{"user_id": 1, "item_id": 1}' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
 # Purchase
 # "successful"
-curl -X POST 'http://127.0.0.1:9000/purchase/6' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
+curl -X POST 'http://127.0.0.1:9000/purchase/1' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs"" -H 'Content-Type: application/json'
 #
 #
 curl -X GET 'http://127.0.0.1:9000/search?keyword=Carrot' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
+#
+#
+curl -X GET 'http://127.0.0.1:9000/purchase_history' -H "Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg1MzczODA0fQ.tEiQ_jGsmAgkcuNP8gNar4VsCRwBJSuGMTZuTqMz6Cs""
 ```
 
 ###  Structure
