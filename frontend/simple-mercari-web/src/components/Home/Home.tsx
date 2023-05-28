@@ -24,7 +24,7 @@ export const Home = () => {
   // itemsが変更された時だけ検索するようにする。
   const displayedItems = useMemo(() => {
     if (!searchText) return items;
-    if (!items) return [];
+    // if (!items) return [];
     return items.filter((item) => {
       return item.name.toLowerCase().includes(searchText.toLowerCase());
     });
@@ -71,7 +71,7 @@ export const Home = () => {
         <span>
           <p>Logined User ID: {cookies.userID}</p>
         </span>
-        <ItemList items={items} />
+        <ItemList items={displayedItems} />
       </div>
     </MerComponent>
   );
