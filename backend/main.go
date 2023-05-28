@@ -105,11 +105,11 @@ func run(ctx context.Context) int {
 	l.GET("/users/:userID/items", h.GetUserItems)
 	l.POST("/items", h.AddItem)
 	l.POST("/sell", h.Sell)
-	l.PUT("/items/:itemID", h.UpdateItem)
 	l.POST("/purchase/:itemID", h.Purchase)
 	l.GET("/balance", h.GetBalance)
 	l.POST("/balance", h.AddBalance)
 	l.GET("/search", h.SearchItem)
+	l.PUT("/items/:itemID", h.UpdateItem)
 
 	// Start server
 	go func() {
