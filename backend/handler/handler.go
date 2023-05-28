@@ -305,12 +305,18 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
 	// TODO: check req.UserID and item.UserID→済
 	// http.StatusPreconditionFailed(412)
 	// TODO: only update when status is initial→済
 	// http.StatusPreconditionFailed(412)
-	if item.UserID != int64(req.UserID) {
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
+
+	if item.UserID != userID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "this item does not belong to this user")
 	}
 
 	if item.Status != domain.ItemStatusInitial {
