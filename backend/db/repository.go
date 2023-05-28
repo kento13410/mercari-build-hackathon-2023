@@ -60,6 +60,7 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id int
 
 type ItemRepository interface {
 	AddItem(ctx context.Context, item domain.Item) (domain.Item, error)
+	PutItem(ctx context.Context, item domain.Item) (domain.Item, error)
 	GetItem(ctx context.Context, id int32) (domain.Item, error)
 	GetItemImage(ctx context.Context, id int32) ([]byte, error)
 	GetOnSaleItems(ctx context.Context) ([]domain.Item, error)
@@ -85,6 +86,20 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
 	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID() AND seller_id = ?", item.UserID)
+	var res domain.Item
+	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
+	if err == sql.ErrNoRows {
+		err := fmt.Errorf("registration has been stopped because it was done at the same time")
+		return res, err
+	}
+	return res, nil
+}
+
+func (r *ItemDBRepository) PutItem(ctx context.Context, item domain.Item) (domain.Item, error) {
+	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, image = ?, status = ? WHERE ID = ?", item.Name, item.Price, item.Description, item.CategoryID, item.Image, item.Status, item.ID); err != nil {
+		return domain.Item{}, err
+	}
+	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE ID = ?", item.ID)
 	var res domain.Item
 	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
 	if err == sql.ErrNoRows {

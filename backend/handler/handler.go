@@ -74,8 +74,7 @@ type getCategoriesResponse struct {
 }
 
 type sellRequest struct {
-	UserID int32 `json:"user_id"`
-	ItemID int32 `json:"item_id"`
+	ID int32 `json:"user_id"`
 }
 
 type addItemRequest struct {
@@ -86,6 +85,17 @@ type addItemRequest struct {
 }
 
 type addItemResponse struct {
+	ID int64 `json:"id"`
+}
+
+type putItemRequest struct {
+	Name        string `form:"name"`
+	CategoryID  int64  `form:"category_id"`
+	Price       int64  `form:"price"`
+	Description string `form:"description"`
+}
+
+type putItemResponse struct {
 	ID int64 `json:"id"`
 }
 
@@ -294,6 +304,76 @@ func (h *Handler) AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
+func (h *Handler) UpdateItem(c echo.Context) error {
+	// TODO: validation→済
+	// http.StatusBadRequest(400)
+	ctx := c.Request().Context()
+	itemID, err := strconv.Atoi(c.Param("itemID"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	req := new(putItemRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+	file, err := c.FormFile("image")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// ファイルサイズが大きすぎる場合のエラーハンドリング
+	maxSize := int64(1024 * 1024) // 1MB
+	if file.Size > maxSize {
+		return echo.NewHTTPError(http.StatusBadRequest, "file size is too large")
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer src.Close()
+
+	var dest []byte
+	blob := bytes.NewBuffer(dest)
+
+	if _, err := io.Copy(blob, src); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid categoryID")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	item, err := h.ItemRepo.PutItem(c.Request().Context(), domain.Item{
+		ID:          int32(itemID),
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		UserID:      userID,
+		Price:       req.Price,
+		Description: req.Description,
+		Image:       blob.Bytes(),
+		Status:      domain.ItemStatusInitial,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
+}
+
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(sellRequest)
@@ -302,7 +382,7 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
+	item, err := h.ItemRepo.GetItem(ctx, req.ID)
 	// TODO: not found handling→済
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
