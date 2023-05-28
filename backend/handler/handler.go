@@ -618,3 +618,34 @@ func getEnv(key string, defaultValue string) string {
 	}
 	return value
 }
+
+func (h Handler) SearchItem(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	keyword := c.QueryParam("keyword")
+
+	items, err := h.ItemRepo.GetItemsByName(ctx, keyword)
+	// TODO: not found handling→済
+	// http.StatusNotFound(404)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	var res []getUserItemsResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}

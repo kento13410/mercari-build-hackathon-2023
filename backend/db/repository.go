@@ -57,6 +57,7 @@ type ItemRepository interface {
 	GetItemImage(ctx context.Context, id int32) ([]byte, error)
 	GetOnSaleItems(ctx context.Context) ([]domain.Item, error)
 	GetItemsByUserID(ctx context.Context, userID int64) ([]domain.Item, error)
+	GetItemsByName(ctx context.Context, keyword string) ([]domain.Item, error)
 	GetCategory(ctx context.Context, id int64) (domain.Category, error)
 	GetCategories(ctx context.Context) ([]domain.Category, error)
 	UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error
@@ -120,8 +121,7 @@ func (r *ItemDBRepository) GetOnSaleItems(ctx context.Context) ([]domain.Item, e
 	return items, nil
 }
 
-func (r *ItemDBRepository) GetItemsByUserID(ctx context.Context, userID int64) ([]domain.Item, error) {
-	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE seller_id = ?", userID)
+func GetItemByRows(rows *sql.Rows, err error) ([]domain.Item, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +139,16 @@ func (r *ItemDBRepository) GetItemsByUserID(ctx context.Context, userID int64) (
 		return nil, err
 	}
 	return items, nil
+}
+
+func (r *ItemDBRepository) GetItemsByUserID(ctx context.Context, userID int64) ([]domain.Item, error) {
+	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE seller_id = ?", userID)
+	return GetItemByRows(rows, err)
+}
+
+func (r *ItemDBRepository) GetItemsByName(ctx context.Context, keyword string) ([]domain.Item, error) {
+	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE name = ?", keyword)
+	return GetItemByRows(rows, err)
 }
 
 func (r *ItemDBRepository) UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error {
