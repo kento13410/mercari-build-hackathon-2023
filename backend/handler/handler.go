@@ -365,6 +365,7 @@ func (h *Handler) UpdateItem(c echo.Context) error {
 		Price:       req.Price,
 		Description: req.Description,
 		Image:       blob.Bytes(),
+		Status:      domain.ItemStatusInitial,
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
