@@ -326,6 +326,31 @@ func (h *Handler) UpdateItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
+	file, err := c.FormFile("image")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// ファイルサイズが大きすぎる場合のエラーハンドリング
+	maxSize := int64(1024 * 1024) // 1MB
+	if file.Size > maxSize {
+		return echo.NewHTTPError(http.StatusBadRequest, "file size is too large")
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer src.Close()
+
+	var dest []byte
+	blob := bytes.NewBuffer(dest)
+	// TODO: pass very big file→済
+	// http.StatusBadRequest(400)
+	if _, err := io.Copy(blob, src); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -340,6 +365,7 @@ func (h *Handler) UpdateItem(c echo.Context) error {
 		UserID:      userID,
 		Price:       req.Price,
 		Description: req.Description,
+		Image:       blob.Bytes(),
 		Status:      domain.ItemStatusInitial,
 	}, int64(itemID))
 	if err != nil {
