@@ -4,6 +4,7 @@ import { MerComponent } from "../MerComponent";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
+import { ImagePreview } from "../../image-preview";
 
 interface Category {
   id: number;

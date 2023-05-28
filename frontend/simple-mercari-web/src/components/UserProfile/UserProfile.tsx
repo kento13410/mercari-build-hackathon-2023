@@ -83,7 +83,7 @@ export const UserProfile: React.FC = () => {
       <div className="UserProfile">
         <div>
           <div>
-            <h2>
+            <h2 className="subtitle">
               <span>Balance: {balance}</span>
             </h2>
             <input
@@ -96,13 +96,13 @@ export const UserProfile: React.FC = () => {
               }}
               required
             />
-            <button onClick={onBalanceSubmit} id="MerButton">
+            <button onClick={onBalanceSubmit} id="MerButton1">
               Add balance
             </button>
           </div>
 
           <div>
-            <h2>Item List</h2>
+            <h2 className="subtitle">Item List</h2>
             {<ItemList items={[...items].reverse()} />}
           </div>
         </div>

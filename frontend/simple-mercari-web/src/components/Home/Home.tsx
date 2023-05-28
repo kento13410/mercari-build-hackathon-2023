@@ -20,15 +20,34 @@ export const Home = () => {
 
   const [searchText, setSearchText] = useState<string>("");
 
+  const [searchCategory, setSearchCategory] = useState({
+    clothes: true,
+    food: true,
+    others: true,
+  });
+
+
   // useMemoによりレンダリングの度にitemsを検索するのではなく、
   // itemsが変更された時だけ検索するようにする。
   const displayedItems = useMemo(() => {
-    if (!searchText) return items;
-    // if (!items) return [];
-    return items.filter((item) => {
-      return item.name.toLowerCase().includes(searchText.toLowerCase());
-    });
-  }, [items, searchText]);
+    console.log(searchCategory);
+    if (!items) return [];
+
+    if (!searchText) {
+      return items.filter((item) => { // カテゴリー検索
+        return (item.category_name === "clothes" && searchCategory.clothes) || (item.category_name === "food" && searchCategory.food) || (item.category_name === "others" && searchCategory.others);
+      });
+    } else {
+      return items.filter((item) => {
+        return item.name.toLowerCase().includes(searchText.toLowerCase());
+      }).filter((item) => { // カテゴリー検索
+        return (item.category_name === "clothes" && searchCategory.clothes) || (item.category_name === "food" && searchCategory.food) || (item.category_name === "others" && searchCategory.others);
+      });
+    }
+  
+  }, [items, searchText, searchCategory]);
+
+
 
   const fetchItems = () => {
     fetcher<Item[]>(`/items`, {
@@ -67,6 +86,49 @@ export const Home = () => {
   const itemListPage = (
     <MerComponent>
       <input type="text" onChange={(e) => setSearchText(e.target.value)} />
+      
+      <div>
+      <label>
+        clothes:
+        <input
+          type="checkbox"
+          name="clothes"
+          checked={searchCategory.clothes}
+          onChange={(e) => setSearchCategory({
+            ...searchCategory,
+            // clothes: e.target.checked,
+            clothes: !searchCategory.clothes
+          })}
+        />
+      </label>
+
+      <label>
+        food:
+        <input
+          type="checkbox"
+          name="food"
+          checked={searchCategory.food}
+          onChange={(e) => setSearchCategory({
+            ...searchCategory,
+            food: !searchCategory.food
+          })}
+        />
+      </label>
+      <label>
+        others:
+        <input
+          type="checkbox"
+          name="others"
+          checked={searchCategory.others}
+          onChange={(e) => setSearchCategory({
+            ...searchCategory,
+            others: !searchCategory.others
+          })}
+        />
+      </label>
+      </div>
+
+
       <div>
         <span>
           <p>Logined User ID: {cookies.userID}</p>
