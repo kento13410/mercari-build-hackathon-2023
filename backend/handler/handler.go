@@ -358,7 +358,6 @@ func (h *Handler) UpdateItem(c echo.Context) error {
 	}
 
 	item, err := h.ItemRepo.PutItem(c.Request().Context(), domain.Item{
-		ID:          int32(itemID),
 		Name:        req.Name,
 		CategoryID:  req.CategoryID,
 		UserID:      userID,
@@ -366,7 +365,7 @@ func (h *Handler) UpdateItem(c echo.Context) error {
 		Description: req.Description,
 		Image:       blob.Bytes(),
 		Status:      domain.ItemStatusInitial,
-	})
+	}, int64(itemID))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
