@@ -108,6 +108,13 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
+type searchItem struct {
+	ID           int32  `json:"id"`
+	Name         string `json:"name"`
+	Price        int64  `json:"price"`
+	CategoryName string `json:"category_name"`
+}
+
 type Handler struct {
 	DB       *sql.DB
 	UserRepo db.UserRepository
@@ -637,7 +644,7 @@ func getEnv(key string, defaultValue string) string {
 func (h *Handler) SearchItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	keyword := c.QueryParam("keyword")
+	keyword := c.QueryParam("name")
 
 	items, err := h.ItemRepo.GetItemsByName(ctx, keyword)
 	// TODO: not found handling→済
@@ -649,7 +656,7 @@ func (h *Handler) SearchItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	var res []getUserItemsResponse
+	var res []searchItem
 	for _, item := range items {
 		cats, err := h.ItemRepo.GetCategories(ctx)
 		if err != nil {
@@ -657,7 +664,7 @@ func (h *Handler) SearchItem(c echo.Context) error {
 		}
 		for _, cat := range cats {
 			if cat.ID == item.CategoryID {
-				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+				res = append(res, searchItem{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
 			}
 		}
 	}
