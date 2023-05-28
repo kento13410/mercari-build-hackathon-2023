@@ -370,7 +370,7 @@ func (h *Handler) UpdateItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
+	return c.JSON(http.StatusOK, putItemResponse{ID: int64(item.ID)})
 }
 
 func (h *Handler) Sell(c echo.Context) error {
