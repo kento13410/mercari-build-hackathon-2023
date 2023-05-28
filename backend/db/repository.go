@@ -96,7 +96,7 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 }
 
 func (r *ItemDBRepository) PutItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, seller_id = ? WHERE id = ?", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.ID); err != nil {
+	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, seller_id = ?, status = ?, WHERE id = ?", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Status, item.ID); err != nil {
 		return domain.Item{}, err
 	}
 	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE id = ?", item.ID)
