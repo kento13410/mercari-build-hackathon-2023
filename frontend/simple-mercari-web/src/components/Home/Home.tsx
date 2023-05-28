@@ -21,9 +21,9 @@ export const Home = () => {
   const [searchText, setSearchText] = useState<string>("");
 
   const [searchCategory, setSearchCategory] = useState({
-    clothes: true,
+    fashion: true,
     food: true,
-    others: true,
+    furniture: true,
   });
 
 
@@ -35,13 +35,13 @@ export const Home = () => {
 
     if (!searchText) {
       return items.filter((item) => { // カテゴリー検索
-        return (item.category_name === "clothes" && searchCategory.clothes) || (item.category_name === "food" && searchCategory.food) || (item.category_name === "others" && searchCategory.others);
+        return (item.category_name === "fashion" && searchCategory.fashion) || (item.category_name === "food" && searchCategory.food) || (item.category_name === "furniture" && searchCategory.furniture);
       });
     } else {
       return items.filter((item) => {
         return item.name.toLowerCase().includes(searchText.toLowerCase());
       }).filter((item) => { // カテゴリー検索
-        return (item.category_name === "clothes" && searchCategory.clothes) || (item.category_name === "food" && searchCategory.food) || (item.category_name === "others" && searchCategory.others);
+        return (item.category_name === "fashion" && searchCategory.fashion) || (item.category_name === "food" && searchCategory.food) || (item.category_name === "furniture" && searchCategory.furniture);
       });
     }
   
@@ -85,25 +85,29 @@ export const Home = () => {
 
   const itemListPage = (
     <MerComponent>
+      <div>
+
+      Filter:<span> </span>
       <input type="text" onChange={(e) => setSearchText(e.target.value)} />
+      </div>
       
       <div>
       <label>
-        clothes:
+        fashion
         <input
           type="checkbox"
-          name="clothes"
-          checked={searchCategory.clothes}
+          name="fashion"
+          checked={searchCategory.fashion}
           onChange={(e) => setSearchCategory({
             ...searchCategory,
-            // clothes: e.target.checked,
-            clothes: !searchCategory.clothes
+            // fashion: e.target.checked,
+            fashion: !searchCategory.fashion
           })}
         />
       </label>
 
       <label>
-        food:
+        | food
         <input
           type="checkbox"
           name="food"
@@ -115,14 +119,14 @@ export const Home = () => {
         />
       </label>
       <label>
-        others:
+        | furniture
         <input
           type="checkbox"
-          name="others"
-          checked={searchCategory.others}
+          name="furniture"
+          checked={searchCategory.furniture}
           onChange={(e) => setSearchCategory({
             ...searchCategory,
-            others: !searchCategory.others
+            furniture: !searchCategory.furniture
           })}
         />
       </label>
