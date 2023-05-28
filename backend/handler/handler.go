@@ -634,7 +634,7 @@ func getEnv(key string, defaultValue string) string {
 	return value
 }
 
-func (h Handler) SearchItem(c echo.Context) error {
+func (h *Handler) SearchItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	keyword := c.QueryParam("keyword")
