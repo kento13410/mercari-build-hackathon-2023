@@ -60,6 +60,7 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id int
 
 type ItemRepository interface {
 	AddItem(ctx context.Context, item domain.Item) (domain.Item, error)
+	PutItem(ctx context.Context, item domain.Item, itemID int64) (domain.Item, error)
 	GetItem(ctx context.Context, id int32) (domain.Item, error)
 	GetItemImage(ctx context.Context, id int32) ([]byte, error)
 	GetOnSaleItems(ctx context.Context) ([]domain.Item, error)
@@ -92,6 +93,15 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 		return res, err
 	}
 	return res, nil
+}
+
+func (r *ItemDBRepository) PutItem(ctx context.Context, item domain.Item, itemID int64) (domain.Item, error) {
+	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, seller_id = ?, image = ?, status = ?, WHERE id = ?", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status, itemID); err != nil {
+		return domain.Item{}, err
+	}
+	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE id = ?", itemID)
+	var res domain.Item
+	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
 }
 
 func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, error) {
