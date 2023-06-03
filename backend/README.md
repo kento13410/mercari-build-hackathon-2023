@@ -91,8 +91,8 @@ curl -X POST 'http://127.0.0.1:9000/sell' -d '{"user_id": 1, "item_id": 1}' -H "
 # Purchase
 # "successful"
 curl -X POST 'http://127.0.0.1:9000/purchase/6' -H "Authorization: Bearer "token"" -H 'Content-Type: application/json'
-#
-#
+# Search
+# 
 curl -X GET 'http://127.0.0.1:9000/search?keyword=Carrot' -H "Authorization: Bearer "token""
 ```
 

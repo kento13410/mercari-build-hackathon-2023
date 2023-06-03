@@ -118,6 +118,11 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
+type getPuchaseHistoryResponse struct {
+	Name        string `json:"name"`
+	PurchasedAt string `json:"date"`
+}
+
 type searchItem struct {
 	ID           int32  `json:"id"`
 	Name         string `json:"name"`
@@ -402,9 +407,8 @@ func (h *Handler) Sell(c echo.Context) error {
 	// http.StatusPreconditionFailed(412)
 	// TODO: only update when status is initial→済
 	// http.StatusPreconditionFailed(412)
-
 	if item.UserID != userID {
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "this item does not belong to this user")
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "that user does not have that item")
 	}
 
 	if item.Status != domain.ItemStatusInitial {
@@ -660,6 +664,7 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusPreconditionFailed, "Not enough money")
 	}
 
+	// トランザクション開始
 	tx, err := h.DB.Begin()
 	if err != nil {
 		return err
@@ -690,6 +695,11 @@ func (h *Handler) Purchase(c echo.Context) error {
 	}
 
 	if err := h.UserRepo.UpdateBalance(ctx, tx, sellerID, seller.Balance+item.Price); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if err := h.UserRepo.PurchaseHistory(ctx, tx, userID, item.ID); err != nil {
 		tx.Rollback()
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -752,3 +762,30 @@ func (h *Handler) SearchItem(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h Handler) PurchaseHistory(c echo.Context) error {
+	ctx := c.Request().Context()
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	histories, err := h.ItemRepo.GetPuchaseHistory(ctx, userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	var res []getPuchaseHistoryResponse
+	for _, history := range histories {
+		item_id := history.ItemID
+		item, err := h.ItemRepo.GetItem(ctx, item_id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+		res = append(res, getPuchaseHistoryResponse{Name: item.Name, PurchasedAt: history.PurchasedAt})
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// func (h Handler) SalesHistory(c echo.Context) error {} 

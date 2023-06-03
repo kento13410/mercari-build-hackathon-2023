@@ -12,6 +12,7 @@ type UserRepository interface {
 	AddUser(ctx context.Context, user domain.User) (int64, error)
 	GetUser(ctx context.Context, id int64) (domain.User, error)
 	UpdateBalance(ctx context.Context, tx *sql.Tx, id int64, balance int64) error
+	PurchaseHistory(ctx context.Context, tx *sql.Tx, user_id int64, item_id int32) error
 }
 
 type UserDBRepository struct {
@@ -58,6 +59,13 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id int
 	return nil
 }
 
+func (r *UserDBRepository) PurchaseHistory(ctx context.Context, tx *sql.Tx, user_id int64, item_id int32) error {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO purchase_history (user_id, item_id) VALUES (?, ?)", user_id, item_id); err != nil {
+		return err
+	}
+	return nil
+}
+
 type ItemRepository interface {
 	AddItem(ctx context.Context, item domain.Item) (domain.Item, error)
 	PutItem(ctx context.Context, item domain.Item, itemID int64) (domain.Item, error)
@@ -69,6 +77,7 @@ type ItemRepository interface {
 	GetCategory(ctx context.Context, id int64) (domain.Category, error)
 	GetCategories(ctx context.Context) ([]domain.Category, error)
 	UpdateItemStatus(ctx context.Context, tx *sql.Tx, id int32, status domain.ItemStatus) error
+	GetPuchaseHistory(ctx context.Context, user_id int64) ([]domain.History, error)
 }
 
 type ItemDBRepository struct {
@@ -208,4 +217,25 @@ func (r *ItemDBRepository) GetCategories(ctx context.Context) ([]domain.Category
 		return nil, err
 	}
 	return cats, nil
+}
+
+func (r *ItemDBRepository) GetPuchaseHistory(ctx context.Context, user_id int64) ([]domain.History, error) {
+	rows, err := r.QueryContext(ctx, "SELECT * FROM purchase_history WHERE user_id = ?", user_id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var histories []domain.History
+	for rows.Next() {
+		var history domain.History
+		if err := rows.Scan(&history.ID, &history.UserID ,&history.ItemID, &history.PurchasedAt); err != nil {
+			return nil, err
+		}
+		histories = append(histories, history)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return histories, nil
 }
