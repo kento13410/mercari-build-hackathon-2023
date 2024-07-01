@@ -31,6 +31,9 @@ export const ItemDetail = () => {
   const [itemImage, setItemImage] = useState<Blob>();
   const [cookies] = useCookies(["token", "userID"]);
 
+  const [balance, setBalance] = useState<number>();
+
+
   const fetchItem = () => {
     fetcher<Item>(`/items/${params.id}`, {
       method: "GET",
@@ -65,6 +68,24 @@ export const ItemDetail = () => {
       });
   };
 
+  const fetchUserBalance = () => {
+    fetcher<{ balance: number }>(`/balance`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${cookies.token}`,
+      },
+    })
+      .then((res) => {
+        setBalance(res.balance);
+      })
+      .catch((err) => {
+        console.log(`GET error:`, err);
+        toast.error(err.message);
+      });
+  };
+
   const onSubmit = (_: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     fetcher<Item[]>(`/purchase/${params.id}`, {
       method: "POST",
@@ -80,12 +101,27 @@ export const ItemDetail = () => {
       .then((_) => window.location.reload())
       .catch((err) => {
         console.log(`POST error:`, err);
-        toast.error(err.message);
+        if (item === undefined) {
+          toast.error("This item is not exist.");
+        } else if (item.status === ItemStatus.ItemStatusSoldOut) {
+          toast.error("This item is already sold out.");
+        } else {
+          if (balance===undefined) {
+            toast.error("You don't have enough balance.");
+          } else {
+            if (item.price > balance) {
+              toast.error("You don't have enough balance.");
+            } else {
+              toast.error("This is your item.");
+            }
+          }
+        }
       });
   };
 
   useEffect(() => {
     fetchItem();
+    fetchUserBalance();
   }, []);
 
   return (
